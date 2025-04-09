@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Header
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import StreamingResponse
 import asyncio
@@ -15,6 +15,9 @@ from type_def import StreamChunk
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+# API 키 설정
+API_KEY = os.getenv("MATCHING_SOLVER_API_KEY", "matching-solver-api-key")
+
 app = FastAPI(
     title="Solver API Skeleton",
     description="솔버 인터페이스 정의",
@@ -29,6 +32,14 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+async def verify_api_key(x_api_key: str = Header(None)):
+    if x_api_key != API_KEY:
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid API Key"
+        )
+    return x_api_key
 
 async def generate_fake_responses(chat_sn: int):
     """8초에 걸쳐 fake 응답 데이터를 생성하고 DB에 저장"""
@@ -64,7 +75,10 @@ async def generate_fake_responses(chat_sn: int):
             del chat_response_events[chat_sn]
 
 @app.post("/api/v1/chats/responses")
-async def create_chat_request(chat_request: ChatRequest):
+async def create_chat_request(
+    chat_request: ChatRequest,
+    api_key: str = Depends(verify_api_key)
+):
     try:
         # 채팅 요청 저장
         db.save_chat_request(chat_request)
@@ -82,7 +96,10 @@ async def create_chat_request(chat_request: ChatRequest):
         )
 
 @app.get("/api/v1/chats/{chat_sn}/responses/stream")
-async def stream(chat_sn: int):
+async def stream(
+    chat_sn: int,
+    api_key: str = Depends(verify_api_key)
+):
     try:
         # 해당 chatSn에 대한 이벤트가 없으면 404 반환
         if chat_sn not in chat_response_events:
@@ -136,7 +153,4 @@ async def stream(chat_sn: int):
 
 if __name__ == "__main__":
     import uvicorn
-    
-    # 환경 변수에서 PORT를 가져오고, 없으면 기본값 8000 사용
-    port = int(os.getenv("PORT", 8000))
-    uvicorn.run(app, host="0.0.0.0", port=port) 
+    uvicorn.run(app, host="0.0.0.0", port=8000) 
