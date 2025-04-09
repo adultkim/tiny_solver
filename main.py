@@ -6,6 +6,7 @@ from datetime import datetime
 import random
 from typing import Dict, Optional
 import logging
+import os
 
 from models import ChatRequest, ChatResponse, DEFAULT_CHUNKS, chat_response_events
 from database import db
@@ -62,7 +63,7 @@ async def generate_fake_responses(chat_sn: int):
         if chat_sn in chat_response_events:
             del chat_response_events[chat_sn]
 
-@app.post("/v1/chats/responses")
+@app.post("/api/v1/chats/responses")
 async def create_chat_request(chat_request: ChatRequest):
     try:
         # 채팅 요청 저장
@@ -80,7 +81,7 @@ async def create_chat_request(chat_request: ChatRequest):
             detail=f"Internal Solver Error: {str(e)}"
         )
 
-@app.get("/v1/chats/{chat_sn}/responses/stream")
+@app.get("/api/v1/chats/{chat_sn}/responses/stream")
 async def stream(chat_sn: int):
     try:
         # 해당 chatSn에 대한 이벤트가 없으면 404 반환
@@ -135,4 +136,7 @@ async def stream(chat_sn: int):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000) 
+    
+    # 환경 변수에서 PORT를 가져오고, 없으면 기본값 8000 사용
+    port = int(os.getenv("PORT", 8000))
+    uvicorn.run(app, host="0.0.0.0", port=port) 
