@@ -115,7 +115,6 @@ async def stream(chat_sn: int):
                         data=char
                     )
                     yield partial_chunk.model_dump_json() + "\n"
-                    await asyncio.sleep(0.1)
             
             # 스트리밍 완료 후 이벤트 정리
             del chat_response_events[chat_sn]
