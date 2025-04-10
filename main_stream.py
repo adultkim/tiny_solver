@@ -10,7 +10,7 @@ import os
 
 from models import ChatRequest, ChatResponse, DEFAULT_CHUNKS, chat_response_events
 from database import db
-from type_def import StreamChunk
+from models import Chunk
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -46,8 +46,8 @@ async def generate_fake_responses(chat_sn: int):
     try:
         ###################################################
         # 모델을 사용해서 chatResponse를 생성하는 코드로 변경되어야함
-        
-        # 지연 시간 고의 추가
+        ###################################################
+        # 지연 시간 고의 추가 (모델 사용 시간)
         await asyncio.sleep(3)
 
         for chunk in DEFAULT_CHUNKS:
@@ -74,7 +74,7 @@ async def generate_fake_responses(chat_sn: int):
         if chat_sn in chat_response_events:
             del chat_response_events[chat_sn]
 
-@app.post("/api/v1/chats/responses")
+@app.post("/api/stream/v1/chats/responses")
 async def create_chat_request(
     chat_request: ChatRequest,
     api_key: str = Depends(verify_api_key)
@@ -95,7 +95,7 @@ async def create_chat_request(
             detail=f"Internal Solver Error: {str(e)}"
         )
 
-@app.get("/api/v1/chats/{chat_sn}/responses/stream")
+@app.get("/api/stream/v1/chats/{chat_sn}/responses/stream")
 async def stream(
     chat_sn: int,
     api_key: str = Depends(verify_api_key)
@@ -123,12 +123,12 @@ async def stream(
         async def stream_responses():
             responses = db.get_chat_responses(chat_sn)
             for response in responses:
-                chunk = StreamChunk(
+                chunk = Chunk(
                     type=response['type'],
                     data=response['content']
                 )
                 for char in chunk.data:
-                    partial_chunk = StreamChunk(
+                    partial_chunk = Chunk(
                         type=chunk.type,
                         data=char
                     )
@@ -151,6 +151,6 @@ async def stream(
             detail=f"Internal Solver Error: {str(e)}"
         )
 
-if __name__ == "__main__":
+if __name__ == "__main_stream__":
     import uvicorn
     uvicorn.run(app, host="0.0.0.0", port=8000) 
