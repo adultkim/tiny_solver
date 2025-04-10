@@ -5,6 +5,7 @@ import os
 import requests
 from uuid import uuid4
 from models import ChatRequest, DEFAULT_CHUNKS, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk
+import re
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -36,38 +37,38 @@ async def verify_api_key(x_api_key: str = Header(None)):
         )
     return x_api_key
 
-# @app.post("/api/v1/chats/responses")
-# async def create_chat_request(
-#     chat_request: ChatRequest,
-#     api_key: str = Depends(verify_api_key)
-# ):
-#     try:
-#         return ChatResponseJson(
-#             chatSn=chat_request.chatSn,
-#             chunkRsList=DEFAULT_CHUNKS
-#         )
-#     except Exception as e:
-#         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
-#         raise HTTPException(
-#             status_code=500,
-#             detail=f"Internal Solver Error: {str(e)}"
-#         )
-
-
 @app.post("/api/v1/chats/responses")
 async def create_chat_request(
     chat_request: ChatRequest,
     api_key: str = Depends(verify_api_key)
 ):
     try:
-        response = call_matching_solver(chat_request.chatSn, chat_request.content)
-        return convert_solver_response_to_chunks(response)
+        return ChatResponseJson(
+            chatSn=chat_request.chatSn,
+            chunkRsList=DEFAULT_CHUNKS
+        )
     except Exception as e:
         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
         raise HTTPException(
             status_code=500,
             detail=f"Internal Solver Error: {str(e)}"
         )
+
+
+# @app.post("/api/v1/chats/responses")
+# async def create_chat_request(
+#     chat_request: ChatRequest,
+#     api_key: str = Depends(verify_api_key)
+# ):
+#     try:
+#         response = call_matching_solver(chat_request.chatSn, chat_request.content)
+#         return convert_solver_response_to_chunks(response)
+#     except Exception as e:
+#         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Internal Solver Error: {str(e)}"
+#         )
 
 
 
@@ -119,6 +120,12 @@ async def create_chat_request(
             detail=f"Internal Solver Error: {str(e)}"
         )
 
+
+def sanitize_text(text: str) -> str:
+    if not text:
+        return text
+    # BMP 범위 (0x0000 ~ 0xFFFF)만 허용 (utf8에서 문제 없는 문자들)
+    return re.sub(r'[^\u0000-\uFFFF]', '', text)
 
 
 def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatResponseJson:
