@@ -178,7 +178,7 @@ def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatR
 
 
 
-if __name__ == "__main__":
+if __name__ == "__main_json__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
