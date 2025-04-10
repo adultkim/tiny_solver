@@ -150,7 +150,7 @@ def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatR
 
         chunks.append(Chunk(
             type=EventType.PREFERRED_SKILL_TEXT,
-            data="\n".join("CPA 자격증 소지자\n세무 및 회계 규정에 대한 이해\n")
+            data="\n".join(["CPA 자격증 소지자", "세무 및 회계 규정에 대한 이해"])
         ))
         chunks.append(Chunk(
             type=EventType.TEXT,
