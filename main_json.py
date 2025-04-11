@@ -1,10 +1,13 @@
-from fastapi import FastAPI, HTTPException, Depends, Header
+from fastapi import FastAPI, HTTPException, Depends, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
 import logging
 import os
 import requests
 from uuid import uuid4
 from models import ChatRequest, DEFAULT_CHUNKS, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse
+from pydantic import BaseModel, Field
+from typing import List, Union, Optional, Any
+from enum import Enum
 import re
 
 logging.basicConfig(level=logging.INFO)
@@ -182,6 +185,131 @@ def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatR
         raise HTTPException(
             status_code=500,
             detail=f"Chunk 변환 실패: {str(e)}"
+        )
+
+
+
+class JobDescriptionServiceDto(BaseModel):
+    sn: int
+    title: str
+    descriptions: List[str]
+    requiredSkills: List[str]
+    preferredSkills: List[str]
+
+class RecommendedTalentsRs(BaseModel):
+    jobdaIds: List[str]
+
+@app.post("/api/v1/chats/job-descriptions/recommended-talents")
+async def get_recommended_talents(
+    job_description: JobDescriptionServiceDto,
+    api_key: str = Depends(verify_api_key)
+):
+    try:
+        # TODO: 실제 추천 로직 구현
+        # 임시로 더미 데이터 반환
+        return RecommendedTalentsRs(
+            jobdaIds=["cano721", "ljo0104", "jjs0621"]
+        )
+    except Exception as e:
+        logger.error(f"Error in get_recommended_talents: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal Solver Error: {str(e)}"
+        )
+
+class ChatFilterType(str, Enum):
+    EDUCATION = "EDUCATION"
+    LICENSE = "LICENSE"
+    SKILL = "SKILL"
+    EXAMINATION = "EXAMINATION"
+    CAREER = "CAREER"
+
+class CareerConditionType(str, Enum):
+    OVER = "OVER"
+    UNDER = "UNDER"
+
+class ExaminationFilterDetailRs(BaseModel):
+    examinationCode: int
+    score: Optional[float] = None
+    gradeCode: Optional[str] = None
+
+class CareerFilterDetailRs(BaseModel):
+    jobTitleCode: int
+    careerMonths: int
+    careerConditionType: CareerConditionType
+
+class EducationFilterRs(BaseModel):
+    majorCodes: List[int]
+
+class LicenseFilterRs(BaseModel):
+    licenseCodes: List[int]
+
+class SkillFilterRs(BaseModel):
+    skillCodes: List[int]
+
+class ExaminationFilterRs(BaseModel):
+    examinationList: List[ExaminationFilterDetailRs]
+
+class CareerFilterRs(BaseModel):
+    careerList: List[CareerFilterDetailRs]
+
+class JobDescriptionFiltersRs(BaseModel):
+    type: ChatFilterType
+    summary: str
+    filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
+
+class JobDescriptionFilterRequest(BaseModel):
+    sn: int
+    requiredSkill: str
+
+# 필터 타입 순환을 위한 전역 변수
+current_filter_index = 0
+
+def get_next_filter(required_skill: str) -> JobDescriptionFiltersRs:
+    global current_filter_index
+    filter_types = [
+        (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
+        (ChatFilterType.EDUCATION, lambda: EducationFilterRs(majorCodes=[1, 2, 3])),
+        (ChatFilterType.LICENSE, lambda: LicenseFilterRs(licenseCodes=[1, 2, 3])),
+        (ChatFilterType.EXAMINATION, lambda: ExaminationFilterRs(examinationList=[
+            ExaminationFilterDetailRs(examinationCode=1, score=800.0, gradeCode=None),
+            ExaminationFilterDetailRs(examinationCode=2, score=None, gradeCode="IH")
+        ])),
+        (ChatFilterType.CAREER, lambda: CareerFilterRs(careerList=[
+            CareerFilterDetailRs(jobTitleCode="1", careerMonths=24, careerConditionType=CareerConditionType.UNDER),
+            CareerFilterDetailRs(jobTitleCode="2", careerMonths=12, careerConditionType=CareerConditionType.OVER)
+        ]))
+    ]
+
+    filter_type, filter_value_func = filter_types[current_filter_index]
+    current_filter_index = (current_filter_index + 1) % len(filter_types)
+
+    summaries = {
+        ChatFilterType.SKILL: f"{required_skill} 개발자 포지션에 대한 기술 스킬 필터입니다.",
+        ChatFilterType.EDUCATION: f"{required_skill} 개발자 포지션에 대한 교육 필터입니다.",
+        ChatFilterType.LICENSE: f"{required_skill} 개발자 포지션에 대한 자격증 필터입니다.",
+        ChatFilterType.EXAMINATION: f"{required_skill} 개발자 포지션에 대한 시험 필터입니다.",
+        ChatFilterType.CAREER: f"{required_skill} 개발자 포지션에 대한 경력 필터입니다."
+    }
+
+    return JobDescriptionFiltersRs(
+        type=filter_type,
+        summary=summaries[filter_type],
+        filterValue=filter_value_func()
+    )
+
+@app.post("/api/v1/chats/job-descriptions/filter")
+async def get_job_description_filters(
+    required_skill: str = Body(...),
+    api_key: str = Depends(verify_api_key)
+):
+    try:
+        return get_next_filter(required_skill)
+    except Exception as e:
+        logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal Solver Error: {str(e)}"
         )
 
 
