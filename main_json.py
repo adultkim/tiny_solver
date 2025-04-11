@@ -120,20 +120,20 @@ def call_matching_solver(chat_sn: int, content: str) -> ChatResponseJson:
         )
     )
 
-@app.post("/api/solver/chats/responses")
-async def create_chat_request(
-    chat_request: ChatRequest,
-    api_key: str = Depends(verify_api_key)
-):
-    try:
-        response = call_matching_solver(chat_request.chatSn, chat_request.content)
-        return response
-    except Exception as e:
-        logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
-        raise HTTPException(
-            status_code=500,
-            detail=f"Internal Solver Error: {str(e)}"
-        )
+# @app.post("/api/solver/chats/responses")
+# async def create_chat_request(
+#     chat_request: ChatRequest,
+#     api_key: str = Depends(verify_api_key)
+# ):
+#     try:
+#         response = call_matching_solver(chat_request.chatSn, chat_request.content)
+#         return response
+#     except Exception as e:
+#         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
+#         raise HTTPException(
+#             status_code=500,
+#             detail=f"Internal Solver Error: {str(e)}"
+#         )
 
 
 def sanitize_text(text: str) -> str:
