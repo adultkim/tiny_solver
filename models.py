@@ -14,6 +14,10 @@ class EventType(str, Enum):
     PREFERRED_SKILL_TEXT = "PREFERRED_SKILL_TEXT"
     ERROR = "ERROR"
 
+class ChatValidRequest(BaseModel):
+    content: str
+    created_at: Optional[datetime] = None
+
 class ChatRequest(BaseModel):
     chatSn: int
     content: str
@@ -36,6 +40,9 @@ class JobPosting(BaseModel):
 class Chunk(BaseModel):
     type: str
     data: str
+
+class ChatValidResponse(BaseModel):
+    validYn : bool
 
 class ChatResponseJson(BaseModel):
     chatSn: int

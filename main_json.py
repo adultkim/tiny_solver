@@ -4,7 +4,7 @@ import logging
 import os
 import requests
 from uuid import uuid4
-from models import ChatRequest, DEFAULT_CHUNKS, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk
+from models import ChatRequest, DEFAULT_CHUNKS, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse
 import re
 
 logging.basicConfig(level=logging.INFO)
@@ -36,6 +36,21 @@ async def verify_api_key(x_api_key: str = Header(None)):
             detail="Invalid API Key"
         )
     return x_api_key
+
+@app.post("/api/v1/chats/validate")
+async def validte_chat(
+    chat_valid_request: ChatValidRequest,
+    api_key: str = Depends(verify_api_key)
+):
+    try:
+        return ChatValidResponse(validYn=True)
+    except Exception as e:
+        logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal Solver Error: {str(e)}"
+        )
+
 
 @app.post("/api/v1/chats/responses")
 async def create_chat_request(
@@ -69,9 +84,6 @@ async def create_chat_request(
 #             status_code=500,
 #             detail=f"Internal Solver Error: {str(e)}"
 #         )
-
-
-
 
 
 def post_request_function(url, header, body):
@@ -174,11 +186,7 @@ def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatR
 
 
 
-
-
-
-
-if __name__ == "__main_json__":
+if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
