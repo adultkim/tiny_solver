@@ -1,5 +1,6 @@
 from fastapi import FastAPI, HTTPException, Depends, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
 import logging
 import os
 import requests
@@ -23,6 +24,17 @@ app = FastAPI(
     version="1.0.0"
 )
 
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui_html():
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="Solver API Docs",
+        swagger_js_url="/static/swagger-ui-bundle.js",
+        swagger_css_url="/static/swagger-ui.css",
+        swagger_favicon_url="/static/favicon.ico",
+        init_script="/static/swagger-ui-init.js"  # ← 여기에 js 삽입
+    )
+
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
@@ -32,18 +44,17 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-async def verify_api_key(x_api_key: str = Header(None)):
-    if x_api_key != API_KEY:
-        raise HTTPException(
-            status_code=401,
-            detail="Invalid API Key"
-        )
-    return x_api_key
+# async def verify_api_key(x_api_key: str = Header(None)):
+#     if x_api_key != API_KEY:
+#         raise HTTPException(
+#             status_code=401,
+#             detail="Invalid API Key"
+#         )
+#     return x_api_key
 
 @app.post("/api/v1/chats/validate")
 async def validte_chat(
     chat_valid_request: ChatValidRequest,
-    api_key: str = Depends(verify_api_key)
 ):
     try:
         return ChatValidResponse(validYn=True)
@@ -58,7 +69,6 @@ async def validte_chat(
 @app.post("/api/v1/chats/responses")
 async def create_chat_request(
     chat_request: ChatRequest,
-    api_key: str = Depends(verify_api_key)
 ):
     try:
         return ChatResponseJson(
@@ -76,7 +86,6 @@ async def create_chat_request(
 # @app.post("/api/v1/chats/responses")
 # async def create_chat_request(
 #     chat_request: ChatRequest,
-#     api_key: str = Depends(verify_api_key)
 # ):
 #     try:
 #         response = call_matching_solver(chat_request.chatSn, chat_request.content)
@@ -123,7 +132,6 @@ def call_matching_solver(chat_sn: int, content: str) -> ChatResponseJson:
 # @app.post("/api/solver/chats/responses")
 # async def create_chat_request(
 #     chat_request: ChatRequest,
-#     api_key: str = Depends(verify_api_key)
 # ):
 #     try:
 #         response = call_matching_solver(chat_request.chatSn, chat_request.content)
@@ -202,7 +210,6 @@ class RecommendedTalentsRs(BaseModel):
 @app.post("/api/v1/chats/job-descriptions/recommended-talents")
 async def get_recommended_talents(
     job_description: JobDescriptionServiceDto,
-    api_key: str = Depends(verify_api_key)
 ):
     try:
         # TODO: 실제 추천 로직 구현
@@ -301,7 +308,6 @@ def get_next_filter(required_skill: str) -> JobDescriptionFiltersRs:
 @app.post("/api/v1/chats/job-descriptions/filter")
 async def get_job_description_filters(
     required_skill: str = Body(...),
-    api_key: str = Depends(verify_api_key)
 ):
     try:
         return get_next_filter(required_skill)
