@@ -5,7 +5,7 @@ import logging
 import os
 import requests
 from uuid import uuid4
-from models import ChatRequest, DEFAULT_CHUNKS, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse
+from models import ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse
 from pydantic import BaseModel, Field
 from typing import List, Union, Optional, Any
 from enum import Enum
@@ -95,7 +95,7 @@ async def create_chat_request(
         return ChatResponseJson(
             chatSn=chat_request.chatSn,
             subDomain=chat_request.subDomain,
-            chunkRsList=DEFAULT_CHUNKS
+            chunkRsList=DEFAULT_JOB_DESCRIPTIONS
         )
     except Exception as e:
         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
@@ -222,7 +222,7 @@ def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatR
 
 
 class JobDescriptionServiceDto(BaseModel):
-    sn: int
+    jobDescriptionSn: int
     title: str
     subDomain: str
     descriptions: List[str]
@@ -230,7 +230,8 @@ class JobDescriptionServiceDto(BaseModel):
     preferredSkills: List[str]
 
 class RecommendedTalentsRs(BaseModel):
-    jobdaIds: List[str]
+    jobDescriptionSn: int
+    chunkRsList: List[Chunk]
     subDomain: str
 
 @app.post("/api/v1/chats/job-descriptions/recommended-talents")
@@ -242,8 +243,9 @@ async def get_recommended_talents(
         # TODO: 실제 추천 로직 구현
         # 임시로 더미 데이터 반환
         return RecommendedTalentsRs(
-            jobdaIds=["cano721", "ljo0104", "jjs0621"],
-            subDomain=job_description.subDomain
+            jobDescriptionSn=job_description.jobDescriptionSn,
+            subDomain=job_description.subDomain,
+            chunkRsList=DEFAULT_MATCHING_TALENT
         )
     except Exception as e:
         logger.error(f"Error in get_recommended_talents: {str(e)}", exc_info=True)
@@ -289,10 +291,12 @@ class CareerFilterRs(BaseModel):
     careerList: List[CareerFilterDetailRs]
 
 class JobDescriptionFiltersRq(BaseModel):
+    jobDescriptionSn: int
     subDomain: str
-    required_skill: str
+    requiredSkill: str
 
 class JobDescriptionFiltersRs(BaseModel):
+    jobDescriptionSn: int
     subDomain: str
     type: ChatFilterType
     summary: str
@@ -301,7 +305,7 @@ class JobDescriptionFiltersRs(BaseModel):
 # 필터 타입 순환을 위한 전역 변수
 current_filter_index = 0
 
-def get_next_filter(required_skill: str, subDomain: str) -> JobDescriptionFiltersRs:
+def get_next_filter(requiredSkill: str, subDomain: str, jobDescriptionSn: int) -> JobDescriptionFiltersRs:
     global current_filter_index
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
@@ -321,15 +325,16 @@ def get_next_filter(required_skill: str, subDomain: str) -> JobDescriptionFilter
     current_filter_index = (current_filter_index + 1) % len(filter_types)
 
     summaries = {
-        ChatFilterType.SKILL: f"{required_skill} 개발자 포지션에 대한 기술 스킬 필터입니다.",
-        ChatFilterType.EDUCATION: f"{required_skill} 개발자 포지션에 대한 교육 필터입니다.",
-        ChatFilterType.LICENSE: f"{required_skill} 개발자 포지션에 대한 자격증 필터입니다.",
-        ChatFilterType.EXAMINATION: f"{required_skill} 개발자 포지션에 대한 시험 필터입니다.",
-        ChatFilterType.CAREER: f"{required_skill} 개발자 포지션에 대한 경력 필터입니다."
+        ChatFilterType.SKILL: f"{requiredSkill} 개발자 포지션에 대한 기술 스킬 필터입니다.",
+        ChatFilterType.EDUCATION: f"{requiredSkill} 개발자 포지션에 대한 교육 필터입니다.",
+        ChatFilterType.LICENSE: f"{requiredSkill} 개발자 포지션에 대한 자격증 필터입니다.",
+        ChatFilterType.EXAMINATION: f"{requiredSkill} 개발자 포지션에 대한 시험 필터입니다.",
+        ChatFilterType.CAREER: f"{requiredSkill} 개발자 포지션에 대한 경력 필터입니다."
     }
 
     return JobDescriptionFiltersRs(
         type=filter_type,
+        jobDescriptionSn=jobDescriptionSn,
         subDomain=subDomain,
         summary=summaries[filter_type],
         filterValue=filter_value_func()
@@ -341,7 +346,7 @@ async def get_job_description_filters(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return get_next_filter(job_description_filter.required_skill, job_description_filter.subDomain)
+        return get_next_filter(job_description_filter.requiredSkill, job_description_filter.subDomain, job_description_filter.jobDescriptionSn)
     except Exception as e:
         logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
         raise HTTPException(

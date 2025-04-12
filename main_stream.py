@@ -8,7 +8,7 @@ from typing import Dict, Optional
 import logging
 import os
 
-from models import ChatRequest, ChatResponse, DEFAULT_CHUNKS, chat_response_events
+from models import ChatRequest, ChatResponse, DEFAULT_JOB_DESCRIPTIONS, chat_response_events
 from database import db
 from models import Chunk
 
@@ -50,7 +50,7 @@ async def generate_fake_responses(chat_sn: int):
         # 지연 시간 고의 추가 (모델 사용 시간)
         await asyncio.sleep(3)
 
-        for chunk in DEFAULT_CHUNKS:
+        for chunk in DEFAULT_JOB_DESCRIPTIONS:
             # DB에 응답 저장
             chat_response = ChatResponse(
                 chatSn=chat_sn,

@@ -12,6 +12,7 @@ class EventType(str, Enum):
     JOB_DESCRIPTION_TEXT = "JOB_DESCRIPTION_TEXT"
     REQUIRED_SKILL_TEXT = "REQUIRED_SKILL_TEXT"
     PREFERRED_SKILL_TEXT = "PREFERRED_SKILL_TEXT"
+    MATCHING_TALENT = "MATCHING_TALENT"
     ERROR = "ERROR"
 
 class ChatValidRequest(BaseModel):
@@ -40,7 +41,7 @@ class JobPosting(BaseModel):
 
 class Chunk(BaseModel):
     type: str
-    data: str
+    data: object
 
 class ChatValidResponse(BaseModel):
     validYn : bool
@@ -63,7 +64,7 @@ class JobDescriptionResponse(BaseModel):
     chatSessionLog: ChatSessionLog
 
 # 테스트용 응답 데이터
-DEFAULT_CHUNKS = [
+DEFAULT_JOB_DESCRIPTIONS = [
     Chunk(type=EventType.TEXT, data="재무회계 담당자를 찾고 계시군요!"),
     Chunk(type=EventType.TEXT, data="정확한 수치 분석과 체계적인 관리로, 안정적인 재무 환경을 만들어갈 분이 필요하겠네요."),
     Chunk(type=EventType.JOB_TITLE_TEXT, data="재경본부 신입"),
@@ -81,6 +82,8 @@ DEFAULT_CHUNKS = [
     Chunk(type=EventType.TEXT, data="편하게 적어주시면, 제가 자연스럽게 다듬어드릴게요."),
 ]
 
-
+DEFAULT_MATCHING_TALENT = [
+    Chunk(type=EventType.MATCHING_TALENT, data=["cano721", "ljo0104", "jjs0621"])
+]
 # 진행 중인 채팅 응답 생성 작업을 추적하기 위한 전역 상태
 chat_response_events: Dict[int, asyncio.Event] = {}
