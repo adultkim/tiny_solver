@@ -20,6 +20,7 @@ class ChatValidRequest(BaseModel):
 
 class ChatRequest(BaseModel):
     chatSn: int
+    subDomain : str
     content: str
     created_at: Optional[datetime] = None
 
@@ -45,6 +46,7 @@ class ChatValidResponse(BaseModel):
     validYn : bool
 
 class ChatResponseJson(BaseModel):
+    subDomain : str
     chatSn: int
     chunkRsList: List[Chunk]
 
