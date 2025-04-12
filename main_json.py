@@ -205,12 +205,14 @@ def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatR
 class JobDescriptionServiceDto(BaseModel):
     sn: int
     title: str
+    subDomain: str
     descriptions: List[str]
     requiredSkills: List[str]
     preferredSkills: List[str]
 
 class RecommendedTalentsRs(BaseModel):
     jobdaIds: List[str]
+    subDomain: str
 
 @app.post("/api/v1/chats/job-descriptions/recommended-talents")
 async def get_recommended_talents(
@@ -221,7 +223,8 @@ async def get_recommended_talents(
         # TODO: 실제 추천 로직 구현
         # 임시로 더미 데이터 반환
         return RecommendedTalentsRs(
-            jobdaIds=["cano721", "ljo0104", "jjs0621"]
+            jobdaIds=["cano721", "ljo0104", "jjs0621"],
+            subDomain=job_description.subDomain
         )
     except Exception as e:
         logger.error(f"Error in get_recommended_talents: {str(e)}", exc_info=True)
@@ -266,19 +269,20 @@ class ExaminationFilterRs(BaseModel):
 class CareerFilterRs(BaseModel):
     careerList: List[CareerFilterDetailRs]
 
+class JobDescriptionFiltersRq(BaseModel):
+    subDomain: str
+    required_skill: str
+
 class JobDescriptionFiltersRs(BaseModel):
+    subDomain: str
     type: ChatFilterType
     summary: str
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
-class JobDescriptionFilterRequest(BaseModel):
-    sn: int
-    requiredSkill: str
-
 # 필터 타입 순환을 위한 전역 변수
 current_filter_index = 0
 
-def get_next_filter(required_skill: str) -> JobDescriptionFiltersRs:
+def get_next_filter(required_skill: str, subDomain: str) -> JobDescriptionFiltersRs:
     global current_filter_index
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
@@ -307,17 +311,18 @@ def get_next_filter(required_skill: str) -> JobDescriptionFiltersRs:
 
     return JobDescriptionFiltersRs(
         type=filter_type,
+        subDomain=subDomain,
         summary=summaries[filter_type],
         filterValue=filter_value_func()
     )
 
 @app.post("/api/v1/chats/job-descriptions/filter")
 async def get_job_description_filters(
-    required_skill: str = Body(...),
+    job_description_filter: JobDescriptionFiltersRq,
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return get_next_filter(required_skill)
+        return get_next_filter(job_description_filter.required_skill, job_description_filter.subDomain)
     except Exception as e:
         logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
         raise HTTPException(
