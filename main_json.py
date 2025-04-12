@@ -52,6 +52,25 @@ app.add_middleware(
 #         )
 #     return x_api_key
 
+# 요청/응답 모델 정의
+class SolverChatRefineRq(BaseModel):
+    content: str  
+
+class SolverChatRefineRs(BaseModel):
+    content: str
+
+@app.post("/api/v1/chats/refine")
+async def refine_chat(request: SolverChatRefineRq) -> SolverChatRefineRs:
+    try:
+        refined = f"[다듬다듬] {request.content}"
+        return SolverChatRefineRs(content=refined)
+    except Exception as e:
+        logger.error(f"Error in refine_chat: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal Solver Error: {str(e)}"
+        )
+
 @app.post("/api/v1/chats/validate")
 async def validte_chat(
     chat_valid_request: ChatValidRequest,
