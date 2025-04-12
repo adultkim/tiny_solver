@@ -55,6 +55,7 @@ app.add_middleware(
 @app.post("/api/v1/chats/validate")
 async def validte_chat(
     chat_valid_request: ChatValidRequest,
+    # api_key: str = Depends(verify_api_key)
 ):
     try:
         return ChatValidResponse(validYn=True)
@@ -69,10 +70,12 @@ async def validte_chat(
 @app.post("/api/v1/chats/responses")
 async def create_chat_request(
     chat_request: ChatRequest,
+    # api_key: str = Depends(verify_api_key)
 ):
     try:
         return ChatResponseJson(
             chatSn=chat_request.chatSn,
+            subDomain=chat_request.subDomain,
             chunkRsList=DEFAULT_CHUNKS
         )
     except Exception as e:
@@ -86,6 +89,7 @@ async def create_chat_request(
 # @app.post("/api/v1/chats/responses")
 # async def create_chat_request(
 #     chat_request: ChatRequest,
+# # api_key: str = Depends(verify_api_key)
 # ):
 #     try:
 #         response = call_matching_solver(chat_request.chatSn, chat_request.content)
@@ -132,6 +136,7 @@ def call_matching_solver(chat_sn: int, content: str) -> ChatResponseJson:
 # @app.post("/api/solver/chats/responses")
 # async def create_chat_request(
 #     chat_request: ChatRequest,
+# # api_key: str = Depends(verify_api_key)
 # ):
 #     try:
 #         response = call_matching_solver(chat_request.chatSn, chat_request.content)
@@ -210,6 +215,7 @@ class RecommendedTalentsRs(BaseModel):
 @app.post("/api/v1/chats/job-descriptions/recommended-talents")
 async def get_recommended_talents(
     job_description: JobDescriptionServiceDto,
+    # api_key: str = Depends(verify_api_key)
 ):
     try:
         # TODO: 실제 추천 로직 구현
@@ -308,6 +314,7 @@ def get_next_filter(required_skill: str) -> JobDescriptionFiltersRs:
 @app.post("/api/v1/chats/job-descriptions/filter")
 async def get_job_description_filters(
     required_skill: str = Body(...),
+    # api_key: str = Depends(verify_api_key)
 ):
     try:
         return get_next_filter(required_skill)
