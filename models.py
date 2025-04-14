@@ -24,7 +24,7 @@ class InputType(str, Enum):
 
 
 class ChatValidRequest(BaseModel):
-    type : InputType
+    inputType : InputType
     content: str
     created_at: Optional[datetime] = None
 
