@@ -54,7 +54,7 @@ app.add_middleware(
 
 # 요청/응답 모델 정의
 class SolverChatRefineRq(BaseModel):
-    type : InputType
+    inputType : InputType
     content: str  
 
 class SolverChatRefineRs(BaseModel):
