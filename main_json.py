@@ -363,7 +363,7 @@ async def get_job_description_filters(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return get_next_filter(JobDescriptionFiltersRq.chatSn, job_description_filter.requiredSkills, job_description_filter.subDomain, job_description_filter.jobDescriptionSn)
+        return get_next_filter(job_description_filter.chatSn, job_description_filter.requiredSkills, job_description_filter.subDomain, job_description_filter.jobDescriptionSn)
     except Exception as e:
         logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
         raise HTTPException(
