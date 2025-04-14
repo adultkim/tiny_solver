@@ -79,7 +79,7 @@ async def validte_chat(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return ChatValidResponse(validYn=True)
+        return ChatValidResponse(isValidYn=True)
     except Exception as e:
         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
         raise HTTPException(
