@@ -247,7 +247,7 @@ async def get_recommended_talents(
         # TODO: 실제 추천 로직 구현
         # 임시로 더미 데이터 반환
         return RecommendedTalentsRs(
-            chatSN=job_description.chatSn,
+            chatSn=job_description.chatSn,
             jobDescriptionSn=job_description.jobDescriptionSn,
             subDomain=job_description.subDomain,
             chunkRsList=DEFAULT_MATCHING_TALENT
@@ -315,7 +315,7 @@ class JobDescriptionFiltersRs(BaseModel):
     subDomain: str
     filters: List[FilterResult]
 
-def get_next_filter(requiredSkills: List[str], subDomain: str, jobDescriptionSn: int) -> JobDescriptionFiltersRs:
+def get_next_filter(chatSn: int, requiredSkills: List[str], subDomain: str, jobDescriptionSn: int) -> JobDescriptionFiltersRs:
     # 필터 타입과 해당 필터 값을 생성하는 함수 정의
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
@@ -351,6 +351,7 @@ def get_next_filter(requiredSkills: List[str], subDomain: str, jobDescriptionSn:
     ]
 
     return JobDescriptionFiltersRs(
+        chatSn=chatSn,
         jobDescriptionSn=jobDescriptionSn,
         subDomain=subDomain,
         filters=filter_results
@@ -362,7 +363,7 @@ async def get_job_description_filters(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return get_next_filter(job_description_filter.requiredSkills, job_description_filter.subDomain, job_description_filter.jobDescriptionSn)
+        return get_next_filter(JobDescriptionFiltersRq.chatSn, job_description_filter.requiredSkills, job_description_filter.subDomain, job_description_filter.jobDescriptionSn)
     except Exception as e:
         logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
         raise HTTPException(
