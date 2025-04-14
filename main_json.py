@@ -224,6 +224,7 @@ def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatR
 
 
 class JobDescriptionServiceDto(BaseModel):
+    chatSn: int
     jobDescriptionSn: int
     title: str
     subDomain: str
@@ -232,6 +233,7 @@ class JobDescriptionServiceDto(BaseModel):
     preferredSkills: List[str]
 
 class RecommendedTalentsRs(BaseModel):
+    chatSn: int
     jobDescriptionSn: int
     chunkRsList: List[Chunk]
     subDomain: str
@@ -245,6 +247,7 @@ async def get_recommended_talents(
         # TODO: 실제 추천 로직 구현
         # 임시로 더미 데이터 반환
         return RecommendedTalentsRs(
+            chatSN=job_description.chatSn,
             jobDescriptionSn=job_description.jobDescriptionSn,
             subDomain=job_description.subDomain,
             chunkRsList=DEFAULT_MATCHING_TALENT
@@ -293,8 +296,12 @@ class CareerFilterRs(BaseModel):
     careerList: List[CareerFilterDetailRs]
 
 class JobDescriptionFiltersRq(BaseModel):
+    chatSn: int
     jobDescriptionSn: int
     subDomain: str
+    descriptions: List[str]
+    requiredSkills: List[str]
+    preferredSkills: List[str]
     requiredSkills: List[str]
 
 class FilterResult(BaseModel):
@@ -303,6 +310,7 @@ class FilterResult(BaseModel):
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
 class JobDescriptionFiltersRs(BaseModel):
+    chatSn: int
     jobDescriptionSn: int
     subDomain: str
     filters: List[FilterResult]
