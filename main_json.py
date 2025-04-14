@@ -55,15 +55,16 @@ app.add_middleware(
 # 요청/응답 모델 정의
 class SolverChatRefineRq(BaseModel):
     inputType : InputType
-    content: str  
+    content: List[str]  
 
 class SolverChatRefineRs(BaseModel):
-    content: str
+    content: List[str]
 
 @app.post("/api/v1/chats/refine")
 async def refine_chat(request: SolverChatRefineRq) -> SolverChatRefineRs:
     try:
-        refined = f"[다듬다듬] {request.content}"
+        # 각 항목을 다듬는 예시 처리
+        refined = [f"[다듬다듬] {item}" for item in request.content]
         return SolverChatRefineRs(content=refined)
     except Exception as e:
         logger.error(f"Error in refine_chat: {str(e)}", exc_info=True)
