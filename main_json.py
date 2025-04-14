@@ -294,20 +294,20 @@ class CareerFilterRs(BaseModel):
 class JobDescriptionFiltersRq(BaseModel):
     jobDescriptionSn: int
     subDomain: str
-    requiredSkill: str
+    requiredSkills: List[str]
 
-class JobDescriptionFiltersRs(BaseModel):
-    jobDescriptionSn: int
-    subDomain: str
+class FilterResult(BaseModel):
     type: ChatFilterType
     summary: str
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
-# 필터 타입 순환을 위한 전역 변수
-current_filter_index = 0
+class JobDescriptionFiltersRs(BaseModel):
+    jobDescriptionSn: int
+    subDomain: str
+    filters: List[FilterResult]
 
-def get_next_filter(requiredSkill: str, subDomain: str, jobDescriptionSn: int) -> JobDescriptionFiltersRs:
-    global current_filter_index
+def get_next_filter(requiredSkills: List[str], subDomain: str, jobDescriptionSn: int) -> JobDescriptionFiltersRs:
+    # 필터 타입과 해당 필터 값을 생성하는 함수 정의
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
         (ChatFilterType.EDUCATION, lambda: EducationFilterRs(majorCodes=[1, 2, 3])),
@@ -322,23 +322,29 @@ def get_next_filter(requiredSkill: str, subDomain: str, jobDescriptionSn: int) -
         ]))
     ]
 
-    filter_type, filter_value_func = filter_types[current_filter_index]
-    current_filter_index = (current_filter_index + 1) % len(filter_types)
-
+    skill_summary = ", ".join(requiredSkills)
     summaries = {
-        ChatFilterType.SKILL: f"{requiredSkill} 개발자 포지션에 대한 기술 스킬 필터입니다.",
-        ChatFilterType.EDUCATION: f"{requiredSkill} 개발자 포지션에 대한 교육 필터입니다.",
-        ChatFilterType.LICENSE: f"{requiredSkill} 개발자 포지션에 대한 자격증 필터입니다.",
-        ChatFilterType.EXAMINATION: f"{requiredSkill} 개발자 포지션에 대한 시험 필터입니다.",
-        ChatFilterType.CAREER: f"{requiredSkill} 개발자 포지션에 대한 경력 필터입니다."
+        ChatFilterType.SKILL: f"{skill_summary} 개발자 포지션에 대한 기술 스킬 필터입니다.",
+        ChatFilterType.EDUCATION: f"{skill_summary} 개발자 포지션에 대한 교육 필터입니다.",
+        ChatFilterType.LICENSE: f"{skill_summary} 개발자 포지션에 대한 자격증 필터입니다.",
+        ChatFilterType.EXAMINATION: f"{skill_summary} 개발자 포지션에 대한 시험 필터입니다.",
+        ChatFilterType.CAREER: f"{skill_summary} 개발자 포지션에 대한 경력 필터입니다."
     }
 
+    # 모든 필터 타입에 대한 결과를 생성
+    filter_results = [
+        FilterResult(
+            type=filter_type,
+            summary=summaries[filter_type],
+            filterValue=filter_value_func()
+        )
+        for filter_type, filter_value_func in filter_types
+    ]
+
     return JobDescriptionFiltersRs(
-        type=filter_type,
         jobDescriptionSn=jobDescriptionSn,
         subDomain=subDomain,
-        summary=summaries[filter_type],
-        filterValue=filter_value_func()
+        filters=filter_results
     )
 
 @app.post("/api/v1/chats/job-descriptions/filter")
@@ -347,7 +353,7 @@ async def get_job_description_filters(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return get_next_filter(job_description_filter.requiredSkill, job_description_filter.subDomain, job_description_filter.jobDescriptionSn)
+        return get_next_filter(job_description_filter.requiredSkills, job_description_filter.subDomain, job_description_filter.jobDescriptionSn)
     except Exception as e:
         logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
         raise HTTPException(
