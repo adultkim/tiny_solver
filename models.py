@@ -53,7 +53,7 @@ class Chunk(BaseModel):
     data: object
 
 class ChatValidResponse(BaseModel):
-    validYn : bool
+    isValidYn : bool
 
 class ChatResponseJson(BaseModel):
     subDomain : str
