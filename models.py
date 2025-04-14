@@ -15,7 +15,16 @@ class EventType(str, Enum):
     MATCHING_TALENT = "MATCHING_TALENT"
     ERROR = "ERROR"
 
+class InputType(str, Enum):
+    MAIN_DESCRIPTION = "MAIN_DESCRIPTION"
+    TITLE = "TITLE"
+    RESPONSIBILITY = "RESPONSIBILITY"
+    REQUIRED_QUALIFICATION = "REQUIRED_QUALIFICATION"
+    PREFERRED_QUALIFICATION = "PREFERRED_QUALIFICATION"
+
+
 class ChatValidRequest(BaseModel):
+    type : InputType
     content: str
     created_at: Optional[datetime] = None
 

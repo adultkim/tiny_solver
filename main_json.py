@@ -5,7 +5,7 @@ import logging
 import os
 import requests
 from uuid import uuid4
-from models import ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse
+from models import ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse, InputType
 from pydantic import BaseModel, Field
 from typing import List, Union, Optional, Any
 from enum import Enum
@@ -54,6 +54,7 @@ app.add_middleware(
 
 # 요청/응답 모델 정의
 class SolverChatRefineRq(BaseModel):
+    type : InputType
     content: str  
 
 class SolverChatRefineRs(BaseModel):
