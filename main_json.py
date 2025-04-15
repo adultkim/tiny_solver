@@ -300,12 +300,8 @@ class CareerFilterRs(BaseModel):
 
 class JobDescriptionFiltersRq(BaseModel):
     chatSn: int
-    jobDescriptionSn: int
+    jobDescription: JobDescriptionServiceDto
     businessNumber: str
-    descriptions: List[str]
-    requiredSkills: List[str]
-    preferredSkills: List[str]
-    requiredSkills: List[str]
 
 class FilterResult(BaseModel):
     type: ChatFilterType
@@ -318,7 +314,7 @@ class JobDescriptionFiltersRs(BaseModel):
     businessNumber: str
     filters: List[FilterResult]
 
-def get_next_filter(chatSn: int, requiredSkills: List[str], businessNumber: str, jobDescriptionSn: int) -> JobDescriptionFiltersRs:
+def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, businessNumber: str) -> JobDescriptionFiltersRs:
     # 필터 타입과 해당 필터 값을 생성하는 함수 정의
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
@@ -334,7 +330,7 @@ def get_next_filter(chatSn: int, requiredSkills: List[str], businessNumber: str,
         ]))
     ]
 
-    skill_summary = ", ".join(requiredSkills)
+    skill_summary = ", ".join(jobDescription.requiredSkills)
     summaries = {
         ChatFilterType.SKILL: f"{skill_summary} 개발자 포지션에 대한 기술 스킬 필터입니다.",
         ChatFilterType.EDUCATION: f"{skill_summary} 개발자 포지션에 대한 교육 필터입니다.",
@@ -355,7 +351,7 @@ def get_next_filter(chatSn: int, requiredSkills: List[str], businessNumber: str,
 
     return JobDescriptionFiltersRs(
         chatSn=chatSn,
-        jobDescriptionSn=jobDescriptionSn,
+        jobDescriptionSn=jobDescription.sn,
         businessNumber=businessNumber,
         filters=filter_results
     )
@@ -366,7 +362,7 @@ async def get_job_description_filters(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return get_next_filter(job_description_filter.chatSn, job_description_filter.requiredSkills, job_description_filter.businessNumber, job_description_filter.jobDescriptionSn)
+        return get_next_filter(job_description_filter.chatSn, job_description_filter.jobDescription, job_description_filter.businessNumber)
     except Exception as e:
         logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
         raise HTTPException(
