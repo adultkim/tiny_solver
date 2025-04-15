@@ -1,13 +1,17 @@
 from fastapi import FastAPI, HTTPException, Depends, Header, Body
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.exceptions import RequestValidationError
+from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request
+import logging
 import logging
 import os
 import requests
 from uuid import uuid4
-from models import ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse, InputType
+from models import ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse, InputType, JobDescriptionServiceDto, TalentsRecommendRs, JobDto
 from pydantic import BaseModel, Field
-from typing import List, Union, Optional, Any
+from typing import List, Union, Optional, Any 
 from enum import Enum
 import re
 
@@ -23,6 +27,14 @@ app = FastAPI(
     description="솔버 인터페이스 정의",
     version="1.0.0"
 )
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    logger.error(f"Validation error for request {request.url}:\n{exc.errors()}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors()},
+    )
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
@@ -54,6 +66,7 @@ app.add_middleware(
 
 # 요청/응답 모델 정의
 class SolverChatRefineRq(BaseModel):
+    jobDescription: JobDescriptionServiceDto
     inputType : InputType
     content: List[str]  
 
@@ -79,7 +92,7 @@ async def validte_chat(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return ChatValidResponse(isValidYn=True)
+        return ChatValidResponse(isValidYn=True, comment="부적절한 단어 \"싸움잘하는 사람\"이 포함되어 있습니다.")
     except Exception as e:
         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -96,7 +109,7 @@ async def create_chat_request(
     try:
         return ChatResponseJson(
             chatSn=chat_request.chatSn,
-            subDomain=chat_request.subDomain,
+            businessNumber=chat_request.businessNumber,
             chunkRsList=DEFAULT_JOB_DESCRIPTIONS
         )
     except Exception as e:
@@ -221,35 +234,25 @@ def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatR
             detail=f"Chunk 변환 실패: {str(e)}"
         )
 
-
-
-class JobDescriptionServiceDto(BaseModel):
+class TalentsRecommendRq(BaseModel):
     chatSn: int
-    jobDescriptionSn: int
-    title: str
-    subDomain: str
-    descriptions: List[str]
-    requiredSkills: List[str]
-    preferredSkills: List[str]
-
-class RecommendedTalentsRs(BaseModel):
-    chatSn: int
-    jobDescriptionSn: int
-    chunkRsList: List[Chunk]
-    subDomain: str
+    businessNumber: str
+    jobs: List[JobDto]
+    jobDescription: JobDescriptionServiceDto
 
 @app.post("/api/v1/chats/job-descriptions/recommended-talents")
 async def get_recommended_talents(
-    job_description: JobDescriptionServiceDto,
+    talentsRq: TalentsRecommendRq,
     # api_key: str = Depends(verify_api_key)
 ):
     try:
         # TODO: 실제 추천 로직 구현
         # 임시로 더미 데이터 반환
-        return RecommendedTalentsRs(
-            chatSn=job_description.chatSn,
-            jobDescriptionSn=job_description.jobDescriptionSn,
-            subDomain=job_description.subDomain,
+        return TalentsRecommendRs(
+            chatSn=talentsRq.chatSn,
+            jobDescriptionSn=talentsRq.jobDescription.sn,
+            businessNumber=talentsRq.businessNumber,
+            jobGroupCode=1,
             chunkRsList=DEFAULT_MATCHING_TALENT
         )
     except Exception as e:
@@ -298,7 +301,7 @@ class CareerFilterRs(BaseModel):
 class JobDescriptionFiltersRq(BaseModel):
     chatSn: int
     jobDescriptionSn: int
-    subDomain: str
+    businessNumber: str
     descriptions: List[str]
     requiredSkills: List[str]
     preferredSkills: List[str]
@@ -312,10 +315,10 @@ class FilterResult(BaseModel):
 class JobDescriptionFiltersRs(BaseModel):
     chatSn: int
     jobDescriptionSn: int
-    subDomain: str
+    businessNumber: str
     filters: List[FilterResult]
 
-def get_next_filter(chatSn: int, requiredSkills: List[str], subDomain: str, jobDescriptionSn: int) -> JobDescriptionFiltersRs:
+def get_next_filter(chatSn: int, requiredSkills: List[str], businessNumber: str, jobDescriptionSn: int) -> JobDescriptionFiltersRs:
     # 필터 타입과 해당 필터 값을 생성하는 함수 정의
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
@@ -353,7 +356,7 @@ def get_next_filter(chatSn: int, requiredSkills: List[str], subDomain: str, jobD
     return JobDescriptionFiltersRs(
         chatSn=chatSn,
         jobDescriptionSn=jobDescriptionSn,
-        subDomain=subDomain,
+        businessNumber=businessNumber,
         filters=filter_results
     )
 
@@ -363,7 +366,7 @@ async def get_job_description_filters(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return get_next_filter(job_description_filter.chatSn, job_description_filter.requiredSkills, job_description_filter.subDomain, job_description_filter.jobDescriptionSn)
+        return get_next_filter(job_description_filter.chatSn, job_description_filter.requiredSkills, job_description_filter.businessNumber, job_description_filter.jobDescriptionSn)
     except Exception as e:
         logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
         raise HTTPException(

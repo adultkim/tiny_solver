@@ -23,22 +23,43 @@ class InputType(str, Enum):
     PREFERRED_SKILL = "PREFERRED_SKILL"
 
 
+class Chunk(BaseModel):
+    type: str
+    data: object
+
+class JobDescriptionServiceDto(BaseModel):
+    sn: int
+    title: str
+    descriptions: List[str]
+    requiredSkills: List[str]
+    preferredSkills: List[str]
+
+class JobDto(BaseModel):
+    jobGroupCode: int
+    jobGroupName: str
+    jobDefinition: str
+
+class TalentsRecommendRs(BaseModel):
+    chatSn: int
+    jobDescriptionSn: int
+    jobGroupCode: int
+    chunkRsList: List[Chunk]
+    businessNumber: str    
+
 class ChatValidRequest(BaseModel):
+    jobDescription: Optional[JobDescriptionServiceDto] = None  
     inputType : InputType
     content: List[str]
-    created_at: Optional[datetime] = None
 
 class ChatRequest(BaseModel):
     chatSn: int
-    subDomain : str
+    businessNumber : str
     content: str
-    created_at: Optional[datetime] = None
 
 class ChatResponse(BaseModel):
     chatSn: int
     type: str
     content: str
-    created_at: Optional[datetime] = None
 
 class JobPosting(BaseModel):
     text: str
@@ -47,16 +68,12 @@ class JobPosting(BaseModel):
     required_skills: str
     preferred_skills: str
 
-
-class Chunk(BaseModel):
-    type: str
-    data: object
-
 class ChatValidResponse(BaseModel):
     isValidYn : bool
+    comment: str
 
 class ChatResponseJson(BaseModel):
-    subDomain : str
+    businessNumber : str
     chatSn: int
     chunkRsList: List[Chunk]
 
