@@ -274,7 +274,7 @@ class CareerConditionType(str, Enum):
 
 class ExaminationFilterDetailRs(BaseModel):
     examinationCode: int
-    score: Optional[float] = None
+    score: Optional[int] = None
     gradeCode: Optional[str] = None
 
 class CareerFilterDetailRs(BaseModel):
@@ -320,7 +320,7 @@ def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, busin
         (ChatFilterType.EDUCATION, lambda: EducationFilterRs(majorCodes=[1010101, 1010201, 1010301])),
         (ChatFilterType.LICENSE, lambda: LicenseFilterRs(licenseCodes=[10001, 10002, 10003])),
         (ChatFilterType.EXAMINATION, lambda: ExaminationFilterRs(examinationList=[
-            ExaminationFilterDetailRs(examinationCode=1, score=100.0, gradeCode=None),
+            ExaminationFilterDetailRs(examinationCode=1, score=100, gradeCode=None),
             ExaminationFilterDetailRs(examinationCode=2, score=None, gradeCode="A1")
         ])),
         (ChatFilterType.CAREER, lambda: CareerFilterRs(careerList=[
