@@ -109,7 +109,7 @@ DEFAULT_JOB_DESCRIPTIONS = [
 ]
 
 DEFAULT_MATCHING_TALENT = [
-    Chunk(type=EventType.MATCHING_TALENT, data=["cano721", "zkdlto", "jjs0621", "wldb20", "lyj0508"])
+    Chunk(type=EventType.MATCHING_TALENT, data=["cano721", "cano721", "cano721", "cano721", "cano721"])
 ]
 # 진행 중인 채팅 응답 생성 작업을 추적하기 위한 전역 상태
 chat_response_events: Dict[int, asyncio.Event] = {}
