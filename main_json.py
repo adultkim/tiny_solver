@@ -5,7 +5,6 @@ from fastapi.exceptions import RequestValidationError
 from fastapi.responses import JSONResponse
 from fastapi import FastAPI, Request
 import logging
-import logging
 import os
 import requests
 from uuid import uuid4
@@ -370,7 +369,80 @@ async def get_job_description_filters(
             detail=f"Internal Solver Error: {str(e)}"
         )
 
+class FilterActionType(str, Enum):
+    ADD = "ADD"
+    MODIFY = "MODIFY"
+    DELETE = "DELETE"
 
+class ActionFilterResult(BaseModel):
+    filterSn: int
+    type: ChatFilterType
+    summary: str
+    filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
+
+class FilterActionRequest(BaseModel):
+    filters: List[ActionFilterResult]
+    keyword: str
+
+class FilterActionResponse(BaseModel):
+    actionType: FilterActionType
+    filterSn: Optional[int] = None
+    filterResult: Optional[FilterResult] = None
+
+@app.get("/api/v1/chats/filters")
+async def process_filter_action(
+    request: FilterActionRequest
+):
+    try:
+        if not request.filters:
+            raise HTTPException(
+                status_code=400,
+                detail="필터 목록이 비어있습니다."
+            )
+
+        # 키워드에 "삭제"가 포함된 경우
+        if "삭제" in request.keyword:
+            # 삭제 케이스
+            return FilterActionResponse(
+                actionType=FilterActionType.DELETE,
+                filterSn=request.filters[0].filterSn
+            )
+        # 키워드에 "변경"이 포함된 경우
+        elif "변경" in request.keyword:
+            # 수정 케이스
+            modified_filter = FilterResult(
+                type=ChatFilterType.SKILL,
+                summary=f"Python 개발자 포지션에 대한 수정된 필터입니다.",
+                filterValue=SkillFilterRs(skillCodes=[1, 3, 5])
+            )
+
+            filterSn = request.filters[0].filterSn
+
+            return FilterActionResponse(
+                actionType=FilterActionType.MODIFY,
+                filterSn=filterSn,
+                filterResult=modified_filter
+            )
+        # 그 외 케이스
+        else:
+            # 추가 케이스
+            new_filter = FilterResult(
+                type=ChatFilterType.SKILL,
+                summary=f"Python 개발자 포지션에 대한 새로운 필터입니다.",
+                filterValue=SkillFilterRs(skillCodes=[7, 8, 9])
+            )
+
+            return FilterActionResponse(
+                actionType=FilterActionType.ADD,
+                filterResult=new_filter
+            )
+
+    except Exception as e:
+        logger.error(f"Error in process_filter_action: {str(e)}", exc_info=True)
+        raise HTTPException(
+            status_code=500,
+            detail=f"Internal Solver Error: {str(e)}"
+        )
 
 if __name__ == "__main__":
     import uvicorn
