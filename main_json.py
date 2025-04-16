@@ -317,15 +317,15 @@ def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, busin
     # 필터 타입과 해당 필터 값을 생성하는 함수 정의
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
-        (ChatFilterType.EDUCATION, lambda: EducationFilterRs(majorCodes=[1, 2, 3])),
-        (ChatFilterType.LICENSE, lambda: LicenseFilterRs(licenseCodes=[1, 2, 3])),
+        (ChatFilterType.EDUCATION, lambda: EducationFilterRs(majorCodes=[1010101, 1010201, 1010301])),
+        (ChatFilterType.LICENSE, lambda: LicenseFilterRs(licenseCodes=[10001, 10002, 10003])),
         (ChatFilterType.EXAMINATION, lambda: ExaminationFilterRs(examinationList=[
-            ExaminationFilterDetailRs(examinationCode=1, score=800.0, gradeCode=None),
-            ExaminationFilterDetailRs(examinationCode=2, score=None, gradeCode="IH")
+            ExaminationFilterDetailRs(examinationCode=1, score=100.0, gradeCode=None),
+            ExaminationFilterDetailRs(examinationCode=2, score=None, gradeCode="A1")
         ])),
         (ChatFilterType.CAREER, lambda: CareerFilterRs(careerList=[
-            CareerFilterDetailRs(jobTitleCode="1", careerMonths=24, careerConditionType=CareerConditionType.UNDER),
-            CareerFilterDetailRs(jobTitleCode="2", careerMonths=12, careerConditionType=CareerConditionType.OVER)
+            CareerFilterDetailRs(jobTitleCode="1", careerMonths=60, careerConditionType=CareerConditionType.UNDER),
+            CareerFilterDetailRs(jobTitleCode="2", careerMonths=1, careerConditionType=CareerConditionType.OVER)
         ]))
     ]
 
