@@ -273,11 +273,11 @@ class CareerConditionType(str, Enum):
     UNDER = "UNDER"
 
 class EducationLevelType(str, Enum):
-    HIGHSCHOOL = "고졸"
-    ASSOCIATE = "초대졸"
-    BACHELOR = "대졸"
-    MASTER = "석사"
-    DOCTOR = "박사"
+    HIGHSCHOOL = "HIGHSCHOOL"
+    ASSOCIATE = "ASSOCIATE"
+    BACHELOR = "BACHELOR"
+    MASTER = "MASTER"
+    DOCTOR = "DOCTOR"
 
 class EducationFilterDetailRs(BaseModel):
     majorCode: int
