@@ -272,6 +272,17 @@ class CareerConditionType(str, Enum):
     OVER = "OVER"
     UNDER = "UNDER"
 
+class EducationLevelType(str, Enum):
+    HIGHSCHOOL = "고졸"
+    ASSOCIATE = "초대졸"
+    BACHELOR = "대졸"
+    MASTER = "석사"
+    DOCTOR = "박사"
+
+class EducationFilterDetailRs(BaseModel):
+    majorCode: int
+    educationLevel : EducationLevelType
+
 class ExaminationFilterDetailRs(BaseModel):
     examinationCode: int
     score: Optional[int] = None
@@ -283,7 +294,7 @@ class CareerFilterDetailRs(BaseModel):
     careerConditionType: CareerConditionType
 
 class EducationFilterRs(BaseModel):
-    majorCodes: List[int]
+    educationList: List[EducationFilterDetailRs]
 
 class LicenseFilterRs(BaseModel):
     licenseCodes: List[int]
@@ -317,7 +328,11 @@ def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, busin
     # 필터 타입과 해당 필터 값을 생성하는 함수 정의
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
-        (ChatFilterType.EDUCATION, lambda: EducationFilterRs(majorCodes=[1010101, 1010201, 1010301])),
+        (ChatFilterType.EDUCATION, lambda: EducationFilterRs(educationList=[
+            EducationFilterDetailRs(majorCode=1010101, educationLevel=EducationLevelType.BACHELOR),
+            EducationFilterDetailRs(majorCode=1010201, educationLevel=EducationLevelType.BACHELOR),
+            EducationFilterDetailRs(majorCode=1010301, educationLevel=EducationLevelType.BACHELOR),
+        ])),
         (ChatFilterType.LICENSE, lambda: LicenseFilterRs(licenseCodes=[10001, 10002, 10003])),
         (ChatFilterType.EXAMINATION, lambda: ExaminationFilterRs(examinationList=[
             ExaminationFilterDetailRs(examinationCode=1, score=100, gradeCode=None),
