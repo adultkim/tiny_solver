@@ -316,7 +316,7 @@ class JobDescriptionFiltersRq(BaseModel):
 class FilterResult(BaseModel):
     type: ChatFilterType
     summary: str
-    userQuery: str
+    userQuery: Optional[str] = None
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
 class JobDescriptionFiltersRs(BaseModel):
@@ -406,7 +406,7 @@ class ActionFilterResult(BaseModel):
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
 class FilterActionRequest(BaseModel):
-    filters: List[ActionFilterResult]
+    filters: List[  ActionFilterResult]
     keyword: str
 
 class FilterActionResponse(BaseModel):
@@ -414,7 +414,7 @@ class FilterActionResponse(BaseModel):
     filterSn: Optional[int] = None
     filterResult: Optional[FilterResult] = None
 
-@app.get("/api/v1/chats/filters")
+@app.post("/api/v1/chats/filters")
 async def process_filter_action(
     request: FilterActionRequest
 ):
