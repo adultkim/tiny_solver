@@ -67,7 +67,7 @@ app.add_middleware(
 class SolverChatRefineRq(BaseModel):
     jobDescription: JobDescriptionServiceDto
     inputType : InputType
-    content: List[str]  
+    content: List[str]
 
 class SolverChatRefineRs(BaseModel):
     content: List[str]
@@ -316,6 +316,7 @@ class JobDescriptionFiltersRq(BaseModel):
 class FilterResult(BaseModel):
     type: ChatFilterType
     summary: str
+    userQuery: str
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
 class JobDescriptionFiltersRs(BaseModel):
@@ -326,6 +327,10 @@ class JobDescriptionFiltersRs(BaseModel):
 
 def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, businessNumber: str) -> JobDescriptionFiltersRs:
     # 필터 타입과 해당 필터 값을 생성하는 함수 정의
+
+    # filter
+
+
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
         (ChatFilterType.EDUCATION, lambda: EducationFilterRs(educationList=[
@@ -353,11 +358,20 @@ def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, busin
         ChatFilterType.CAREER: f"{skill_summary} 개발자 포지션에 대한 경력 필터입니다."
     }
 
+    userQueries = {
+        ChatFilterType.SKILL: "기술 스킬 필터 생성 시 사용된 입력값",
+        ChatFilterType.EDUCATION: "교육 필터 생성 시 사용된 입력값",
+        ChatFilterType.LICENSE: "자격증 필터 생성 시 사용된 입력값",
+        ChatFilterType.EXAMINATION: "시험 필터 생성 시 사용된 입력값",
+        ChatFilterType.CAREER: "경력 필터 생성 시 사용된 입력값"
+    }
+
     # 모든 필터 타입에 대한 결과를 생성
     filter_results = [
         FilterResult(
             type=filter_type,
             summary=summaries[filter_type],
+            userQuery=userQueries[filter_type],
             filterValue=filter_value_func()
         )
         for filter_type, filter_value_func in filter_types
