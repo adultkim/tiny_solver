@@ -327,10 +327,6 @@ class JobDescriptionFiltersRs(BaseModel):
 
 def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, businessNumber: str) -> JobDescriptionFiltersRs:
     # 필터 타입과 해당 필터 값을 생성하는 함수 정의
-
-    # filter
-
-
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
         (ChatFilterType.EDUCATION, lambda: EducationFilterRs(educationList=[
