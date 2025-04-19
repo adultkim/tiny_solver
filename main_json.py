@@ -355,11 +355,11 @@ def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, busin
     }
 
     userQueries = {
-        ChatFilterType.SKILL: "기술 스킬 필터 생성 시 사용된 입력값",
-        ChatFilterType.EDUCATION: "교육 필터 생성 시 사용된 입력값",
-        ChatFilterType.LICENSE: "자격증 필터 생성 시 사용된 입력값",
-        ChatFilterType.EXAMINATION: "시험 필터 생성 시 사용된 입력값",
-        ChatFilterType.CAREER: "경력 필터 생성 시 사용된 입력값"
+        ChatFilterType.SKILL: "자격 요건1",
+        ChatFilterType.EDUCATION: "자격 요건2",
+        ChatFilterType.LICENSE: "자격 요건3",
+        ChatFilterType.EXAMINATION: "자격 요건4",
+        ChatFilterType.CAREER: "자격 요건4"
     }
 
     # 모든 필터 타입에 대한 결과를 생성
