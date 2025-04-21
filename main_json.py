@@ -10,7 +10,7 @@ import requests
 from uuid import uuid4
 from models import ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse, InputType, JobDescriptionServiceDto, TalentsRecommendRs, JobDto
 from pydantic import BaseModel, Field
-from typing import List, Union, Optional, Any 
+from typing import List, Union, Optional, Any
 from enum import Enum
 import re
 
@@ -87,8 +87,8 @@ async def refine_chat(request: SolverChatRefineRq) -> SolverChatRefineRs:
 
 @app.post("/api/v1/chats/validate")
 async def validte_chat(
-    chat_valid_request: ChatValidRequest,
-    # api_key: str = Depends(verify_api_key)
+        chat_valid_request: ChatValidRequest,
+        # api_key: str = Depends(verify_api_key)
 ):
     try:
         return ChatValidResponse(isValidYn=True, comment="부적절한 단어 \"싸움잘하는 사람\"이 포함되어 있습니다.")
@@ -102,8 +102,8 @@ async def validte_chat(
 
 @app.post("/api/v1/chats/responses")
 async def create_chat_request(
-    chat_request: ChatRequest,
-    # api_key: str = Depends(verify_api_key)
+        chat_request: ChatRequest,
+        # api_key: str = Depends(verify_api_key)
 ):
     try:
         return ChatResponseJson(
@@ -241,8 +241,8 @@ class TalentsRecommendRq(BaseModel):
 
 @app.post("/api/v1/chats/job-descriptions/recommended-talents")
 async def get_recommended_talents(
-    talentsRq: TalentsRecommendRq,
-    # api_key: str = Depends(verify_api_key)
+        talentsRq: TalentsRecommendRq,
+        # api_key: str = Depends(verify_api_key)
 ):
     try:
         # TODO: 실제 추천 로직 구현
@@ -316,12 +316,7 @@ class JobDescriptionFiltersRq(BaseModel):
 class FilterResult(BaseModel):
     type: ChatFilterType
     summary: str
-    userQuery: str
-    filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
-
-class FilterUpdateResult(BaseModel):
-    type: ChatFilterType
-    summary: str
+    userQuery: str = None
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
 class JobDescriptionFiltersRs(BaseModel):
@@ -387,8 +382,8 @@ def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, busin
 
 @app.post("/api/v1/chats/job-descriptions/filter")
 async def get_job_description_filters(
-    job_description_filter: JobDescriptionFiltersRq,
-    # api_key: str = Depends(verify_api_key)
+        job_description_filter: JobDescriptionFiltersRq,
+        # api_key: str = Depends(verify_api_key)
 ):
     try:
         return get_next_filter(job_description_filter.chatSn, job_description_filter.jobDescription, job_description_filter.businessNumber)
@@ -419,14 +414,9 @@ class FilterActionResponse(BaseModel):
     filterSn: Optional[int] = None
     filterResult: Optional[FilterResult] = None
 
-class FilterUpdateActionResponse(BaseModel):
-    actionType: FilterActionType
-    filterSn: Optional[int] = None
-    filterUpdateResult: Optional[FilterUpdateResult] = None
-
 @app.post("/api/v1/chats/filters")
 async def process_filter_action(
-    request: FilterActionRequest
+        request: FilterActionRequest
 ):
     try:
         if not request.filters:
@@ -438,14 +428,14 @@ async def process_filter_action(
         # 키워드에 "삭제"가 포함된 경우
         if "삭제" in request.keyword:
             # 삭제 케이스
-            return FilterUpdateActionResponse(
+            return FilterActionResponse(
                 actionType=FilterActionType.DELETE,
                 filterSn=request.filters[0].filterSn
             )
         # 키워드에 "변경"이 포함된 경우
         elif "변경" in request.keyword:
             # 수정 케이스
-            modified_filter = FilterUpdateResult(
+            modified_filter = FilterResult(
                 type=ChatFilterType.SKILL,
                 summary=f"Python 개발자 포지션에 대한 수정된 필터입니다.",
                 filterValue=SkillFilterRs(skillCodes=[1, 3, 5])
@@ -453,23 +443,23 @@ async def process_filter_action(
 
             filterSn = request.filters[0].filterSn
 
-            return FilterUpdateActionResponse(
+            return FilterActionResponse(
                 actionType=FilterActionType.MODIFY,
                 filterSn=filterSn,
-                filterUpdateResult=modified_filter
+                filterResult=modified_filter
             )
         # 그 외 케이스
         else:
             # 추가 케이스
-            new_filter = FilterUpdateResult(
+            new_filter = FilterResult(
                 type=ChatFilterType.SKILL,
                 summary=f"Python 개발자 포지션에 대한 새로운 필터입니다.",
                 filterValue=SkillFilterRs(skillCodes=[7, 8, 9])
             )
 
-            return FilterUpdateActionResponse(
+            return FilterActionResponse(
                 actionType=FilterActionType.ADD,
-                filterUpdateResult=new_filter
+                filterResult=new_filter
             )
 
     except Exception as e:
