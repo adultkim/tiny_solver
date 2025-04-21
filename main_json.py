@@ -478,7 +478,7 @@ async def process_filter_action(
 
             return SolverApiResponse(success=True, data=FilterUpdateActionResponse(
             actionType=FilterActionType.ADD,
-            filterUpdateResult=new_filter))
+            filterResult=new_filter))
 
     except Exception as e:
         logger.error(f"Error in process_filter_action: {str(e)}", exc_info=True)
