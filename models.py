@@ -47,6 +47,8 @@ class TalentsRecommendRs(BaseModel):
     businessNumber: str    
 
 class ChatValidRequest(BaseModel):
+    chatSn: int
+    businessNumber: str
     jobDescription: Optional[JobDescriptionServiceDto] = None  
     inputType : InputType
     content: List[str]

@@ -65,6 +65,8 @@ app.add_middleware(
 
 # 요청/응답 모델 정의
 class SolverChatRefineRq(BaseModel):
+    chatSn: int
+    businessNumber: str
     jobDescription: JobDescriptionServiceDto
     inputType : InputType
     content: List[str]
