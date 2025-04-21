@@ -1,18 +1,22 @@
-from fastapi import FastAPI, HTTPException, Depends, Header, Body
-from fastapi.middleware.cors import CORSMiddleware
-from fastapi.openapi.docs import get_swagger_ui_html
-from fastapi.exceptions import RequestValidationError
-from fastapi.responses import JSONResponse
-from fastapi import FastAPI, Request
 import logging
 import os
-import requests
-from uuid import uuid4
-from models import SolverApiResponse, ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse, InputType, JobDescriptionServiceDto, TalentsRecommendRs, JobDto
-from pydantic import BaseModel, Field
-from typing import List, Union, Optional, Any
-from enum import Enum
 import re
+from enum import Enum
+from typing import List, Union, Optional
+from uuid import uuid4
+
+import requests
+from fastapi import FastAPI, Request
+from fastapi import HTTPException
+from fastapi.exceptions import RequestValidationError
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.openapi.docs import get_swagger_ui_html
+from fastapi.responses import JSONResponse
+from pydantic import BaseModel
+
+from models import SolverApiResponse, ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, \
+    JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse, InputType, \
+    JobDescriptionServiceDto, TalentsRecommendRs, JobDto
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
@@ -27,6 +31,7 @@ app = FastAPI(
     version="1.0.0"
 )
 
+
 @app.exception_handler(RequestValidationError)
 async def validation_exception_handler(request: Request, exc: RequestValidationError):
     logger.error(f"Validation error for request {request.url}:\n{exc.errors()}")
@@ -34,6 +39,7 @@ async def validation_exception_handler(request: Request, exc: RequestValidationE
         status_code=422,
         content={"detail": exc.errors()},
     )
+
 
 @app.get("/docs", include_in_schema=False)
 async def custom_swagger_ui_html():
@@ -46,6 +52,7 @@ async def custom_swagger_ui_html():
         init_script="/static/swagger-ui-init.js"  # ← 여기에 js 삽입
     )
 
+
 # CORS 설정
 app.add_middleware(
     CORSMiddleware,
@@ -54,6 +61,7 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
 
 # async def verify_api_key(x_api_key: str = Header(None)):
 #     if x_api_key != API_KEY:
@@ -68,11 +76,13 @@ class SolverChatRefineRq(BaseModel):
     chatSn: Optional[int] = None
     businessNumber: str
     jobDescription: JobDescriptionServiceDto
-    inputType : InputType
+    inputType: InputType
     content: List[str]
+
 
 class SolverChatRefineRs(BaseModel):
     content: List[str]
+
 
 @app.post("/api/v1/chats/refine")
 async def refine_chat(request: SolverChatRefineRq) -> SolverApiResponse[SolverChatRefineRs]:
@@ -87,16 +97,17 @@ async def refine_chat(request: SolverChatRefineRq) -> SolverApiResponse[SolverCh
             detail=f"Internal Solver Error: {str(e)}"
         )
 
+
 @app.post("/api/v1/chats/validate")
 async def validte_chat(
-    chat_valid_request: ChatValidRequest,
-    # api_key: str = Depends(verify_api_key)
+        chat_valid_request: ChatValidRequest,
+        # api_key: str = Depends(verify_api_key)
 ):
     try:
-       return SolverApiResponse(success=True, data=ChatValidResponse(
+        return SolverApiResponse(success=True, data=ChatValidResponse(
             isValidYn=True,
             comment='부적절한 단어 "싸움잘하는 사람"이 포함되어 있습니다.'
-            ))
+        ))
     except Exception as e:
         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -107,8 +118,8 @@ async def validte_chat(
 
 @app.post("/api/v1/chats/responses")
 async def create_chat_request(
-    chat_request: ChatRequest,
-    # api_key: str = Depends(verify_api_key)
+        chat_request: ChatRequest,
+        # api_key: str = Depends(verify_api_key)
 ):
     try:
         return SolverApiResponse(success=True, data=ChatResponseJson(
@@ -149,6 +160,7 @@ def post_request_function(url, header, body):
         logger.error(f"API 호출 오류: {url} | {e}")
         raise
 
+
 def call_matching_solver(chat_sn: int, content: str) -> ChatResponseJson:
     session_id = str(uuid4())
     body = {
@@ -170,6 +182,7 @@ def call_matching_solver(chat_sn: int, content: str) -> ChatResponseJson:
             cost=json_data["chatSessionLogModel"]["cost"]
         )
     )
+
 
 # @app.post("/api/solver/chats/responses")
 # async def create_chat_request(
@@ -238,21 +251,23 @@ def convert_solver_response_to_chunks(response: JobDescriptionResponse) -> ChatR
             detail=f"Chunk 변환 실패: {str(e)}"
         )
 
+
 class TalentsRecommendRq(BaseModel):
     chatSn: int
     businessNumber: str
     jobs: List[JobDto]
     jobDescription: JobDescriptionServiceDto
 
+
 @app.post("/api/v1/chats/job-descriptions/recommended-talents")
 async def get_recommended_talents(
-    talentsRq: TalentsRecommendRq,
-    # api_key: str = Depends(verify_api_key)
+        talentsRq: TalentsRecommendRq,
+        # api_key: str = Depends(verify_api_key)
 ):
     try:
         # TODO: 실제 추천 로직 구현
         # 임시로 더미 데이터 반환
-         return SolverApiResponse(success=True, data=TalentsRecommendRs(
+        return SolverApiResponse(success=True, data=TalentsRecommendRs(
             chatSn=talentsRq.chatSn,
             jobDescriptionSn=talentsRq.jobDescription.sn,
             businessNumber=talentsRq.businessNumber,
@@ -266,6 +281,7 @@ async def get_recommended_talents(
             detail=f"Internal Solver Error: {str(e)}"
         )
 
+
 class ChatFilterType(str, Enum):
     EDUCATION = "EDUCATION"
     LICENSE = "LICENSE"
@@ -273,9 +289,11 @@ class ChatFilterType(str, Enum):
     EXAMINATION = "EXAMINATION"
     CAREER = "CAREER"
 
+
 class CareerConditionType(str, Enum):
     OVER = "OVER"
     UNDER = "UNDER"
+
 
 class EducationLevelType(str, Enum):
     HIGHSCHOOL = "HIGHSCHOOL"
@@ -284,39 +302,49 @@ class EducationLevelType(str, Enum):
     MASTER = "MASTER"
     DOCTOR = "DOCTOR"
 
+
 class EducationFilterDetailRs(BaseModel):
     majorCode: int
-    educationLevel : EducationLevelType
+    educationLevel: EducationLevelType
+
 
 class ExaminationFilterDetailRs(BaseModel):
     examinationCode: int
     score: Optional[int] = None
     gradeCode: Optional[str] = None
 
+
 class CareerFilterDetailRs(BaseModel):
     jobTitleCode: int
     careerMonths: int
     careerConditionType: CareerConditionType
 
+
 class EducationFilterRs(BaseModel):
     educationList: List[EducationFilterDetailRs]
+
 
 class LicenseFilterRs(BaseModel):
     licenseCodes: List[int]
 
+
 class SkillFilterRs(BaseModel):
     skillCodes: List[int]
+
 
 class ExaminationFilterRs(BaseModel):
     examinationList: List[ExaminationFilterDetailRs]
 
+
 class CareerFilterRs(BaseModel):
     careerList: List[CareerFilterDetailRs]
+
 
 class JobDescriptionFiltersRq(BaseModel):
     chatSn: int
     jobDescription: JobDescriptionServiceDto
     businessNumber: str
+
 
 class FilterResult(BaseModel):
     type: ChatFilterType
@@ -324,10 +352,12 @@ class FilterResult(BaseModel):
     userQuery: str
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
+
 class FilterUpdateResult(BaseModel):
     type: ChatFilterType
     summary: str
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
+
 
 class JobDescriptionFiltersRs(BaseModel):
     chatSn: int
@@ -335,7 +365,9 @@ class JobDescriptionFiltersRs(BaseModel):
     businessNumber: str
     filters: List[FilterResult]
 
-def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, businessNumber: str) -> JobDescriptionFiltersRs:
+
+def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto,
+                    businessNumber: str) -> JobDescriptionFiltersRs:
     # 필터 타입과 해당 필터 값을 생성하는 함수 정의
     filter_types = [
         (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
@@ -390,16 +422,17 @@ def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto, busin
         filters=filter_results
     )
 
+
 @app.post("/api/v1/chats/job-descriptions/filter")
 async def get_job_description_filters(
-    job_description_filter: JobDescriptionFiltersRq,
-    # api_key: str = Depends(verify_api_key)
+        job_description_filter: JobDescriptionFiltersRq,
+        # api_key: str = Depends(verify_api_key)
 ):
     try:
         result = get_next_filter(
-        job_description_filter.chatSn,
-        job_description_filter.jobDescription,
-        job_description_filter.businessNumber)
+            job_description_filter.chatSn,
+            job_description_filter.jobDescription,
+            job_description_filter.businessNumber)
         return SolverApiResponse(success=True, data=result)
     except Exception as e:
         logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
@@ -408,10 +441,12 @@ async def get_job_description_filters(
             detail=f"Internal Solver Error: {str(e)}"
         )
 
+
 class FilterActionType(str, Enum):
     ADD = "ADD"
     MODIFY = "MODIFY"
     DELETE = "DELETE"
+
 
 class ActionFilterResult(BaseModel):
     filterSn: int
@@ -419,23 +454,27 @@ class ActionFilterResult(BaseModel):
     summary: str
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
+
 class FilterActionRequest(BaseModel):
-    filters: List[  ActionFilterResult]
+    filters: List[ActionFilterResult]
     keyword: str
+
 
 class FilterActionResponse(BaseModel):
     actionType: FilterActionType
     filterSn: Optional[int] = None
     filterResult: Optional[FilterResult] = None
 
+
 class FilterUpdateActionResponse(BaseModel):
     actionType: FilterActionType
     filterSn: Optional[int] = None
-    filterUpdateResult: Optional[FilterUpdateResult] = None
+    filterResult: Optional[FilterUpdateResult] = None
+
 
 @app.post("/api/v1/chats/filters")
 async def process_filter_action(
-    request: FilterActionRequest
+        request: FilterActionRequest
 ):
     try:
         if not request.filters:
@@ -447,10 +486,10 @@ async def process_filter_action(
         # 키워드에 "삭제"가 포함된 경우
         if "삭제" in request.keyword:
             # 삭제 케이스
-            return FilterUpdateActionResponse(
+            return SolverApiResponse(success=True, data=FilterUpdateActionResponse(
                 actionType=FilterActionType.DELETE,
                 filterSn=request.filters[0].filterSn
-            )
+            ))
         # 키워드에 "변경"이 포함된 경우
         elif "변경" in request.keyword:
             # 수정 케이스
@@ -462,11 +501,11 @@ async def process_filter_action(
 
             filterSn = request.filters[0].filterSn
 
-            return FilterUpdateActionResponse(
+            return SolverApiResponse(success=True, data=FilterUpdateActionResponse(
                 actionType=FilterActionType.MODIFY,
                 filterSn=filterSn,
-                filterUpdateResult=modified_filter
-            )
+                filterResult=modified_filter
+            ))
         # 그 외 케이스
         else:
             # 추가 케이스
@@ -477,8 +516,8 @@ async def process_filter_action(
             )
 
             return SolverApiResponse(success=True, data=FilterUpdateActionResponse(
-            actionType=FilterActionType.ADD,
-            filterResult=new_filter))
+                actionType=FilterActionType.ADD,
+                filterResult=new_filter))
 
     except Exception as e:
         logger.error(f"Error in process_filter_action: {str(e)}", exc_info=True)
@@ -487,7 +526,9 @@ async def process_filter_action(
             detail=f"Internal Solver Error: {str(e)}"
         )
 
+
 if __name__ == "__main__":
     import uvicorn
+
     port = int(os.getenv("PORT", 8000))
     uvicorn.run(app, host="0.0.0.0", port=port)
