@@ -8,7 +8,7 @@ import logging
 import os
 import requests
 from uuid import uuid4
-from models import ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse, InputType, JobDescriptionServiceDto, TalentsRecommendRs, JobDto
+from models import SolverApiResponse, ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse, InputType, JobDescriptionServiceDto, TalentsRecommendRs, JobDto
 from pydantic import BaseModel, Field
 from typing import List, Union, Optional, Any
 from enum import Enum
@@ -65,7 +65,7 @@ app.add_middleware(
 
 # 요청/응답 모델 정의
 class SolverChatRefineRq(BaseModel):
-    chatSn: int
+    chatSn: Optional[int] = None
     businessNumber: str
     jobDescription: JobDescriptionServiceDto
     inputType : InputType
@@ -75,11 +75,11 @@ class SolverChatRefineRs(BaseModel):
     content: List[str]
 
 @app.post("/api/v1/chats/refine")
-async def refine_chat(request: SolverChatRefineRq) -> SolverChatRefineRs:
+async def refine_chat(request: SolverChatRefineRq) -> SolverApiResponse[SolverChatRefineRs]:
     try:
         # 각 항목을 다듬는 예시 처리
         refined = [f"[다듬다듬] {item}" for item in request.content]
-        return SolverChatRefineRs(content=refined)
+        return SolverApiResponse(success=True, data=SolverChatRefineRs(content=refined))
     except Exception as e:
         logger.error(f"Error in refine_chat: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -93,7 +93,10 @@ async def validte_chat(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return ChatValidResponse(isValidYn=True, comment="부적절한 단어 \"싸움잘하는 사람\"이 포함되어 있습니다.")
+       return SolverApiResponse(success=True, data=ChatValidResponse(
+            isValidYn=True,
+            comment='부적절한 단어 "싸움잘하는 사람"이 포함되어 있습니다.'
+            ))
     except Exception as e:
         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -108,11 +111,11 @@ async def create_chat_request(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return ChatResponseJson(
+        return SolverApiResponse(success=True, data=ChatResponseJson(
             chatSn=chat_request.chatSn,
             businessNumber=chat_request.businessNumber,
             chunkRsList=DEFAULT_JOB_DESCRIPTIONS
-        )
+        ))
     except Exception as e:
         logger.error(f"Error in create_chat_request: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -249,13 +252,13 @@ async def get_recommended_talents(
     try:
         # TODO: 실제 추천 로직 구현
         # 임시로 더미 데이터 반환
-        return TalentsRecommendRs(
+         return SolverApiResponse(success=True, data=TalentsRecommendRs(
             chatSn=talentsRq.chatSn,
             jobDescriptionSn=talentsRq.jobDescription.sn,
             businessNumber=talentsRq.businessNumber,
             jobGroupCode=1,
             chunkRsList=DEFAULT_MATCHING_TALENT
-        )
+        ))
     except Exception as e:
         logger.error(f"Error in get_recommended_talents: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -393,7 +396,11 @@ async def get_job_description_filters(
     # api_key: str = Depends(verify_api_key)
 ):
     try:
-        return get_next_filter(job_description_filter.chatSn, job_description_filter.jobDescription, job_description_filter.businessNumber)
+        result = get_next_filter(
+        job_description_filter.chatSn,
+        job_description_filter.jobDescription,
+        job_description_filter.businessNumber)
+        return SolverApiResponse(success=True, data=result)
     except Exception as e:
         logger.error(f"Error in get_job_description_filters: {str(e)}", exc_info=True)
         raise HTTPException(
@@ -469,10 +476,9 @@ async def process_filter_action(
                 filterValue=SkillFilterRs(skillCodes=[7, 8, 9])
             )
 
-            return FilterUpdateActionResponse(
-                actionType=FilterActionType.ADD,
-                filterUpdateResult=new_filter
-            )
+            return SolverApiResponse(success=True, data=FilterUpdateActionResponse(
+            actionType=FilterActionType.ADD,
+            filterUpdateResult=new_filter))
 
     except Exception as e:
         logger.error(f"Error in process_filter_action: {str(e)}", exc_info=True)

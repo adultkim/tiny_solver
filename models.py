@@ -6,6 +6,17 @@ from enum import Enum
 from pydantic import BaseModel
 from typing import Any
 
+
+from typing import Generic, TypeVar
+from pydantic.generics import GenericModel
+
+T = TypeVar("T")
+
+class SolverApiResponse(GenericModel, Generic[T]):
+    success: bool
+    data: T
+
+
 class EventType(str, Enum):
     TEXT = "TEXT"
     JOB_TITLE_TEXT = "JOB_TITLE_TEXT"
@@ -47,7 +58,7 @@ class TalentsRecommendRs(BaseModel):
     businessNumber: str    
 
 class ChatValidRequest(BaseModel):
-    chatSn: int
+    chatSn: Optional[int] = None
     businessNumber: str
     jobDescription: Optional[JobDescriptionServiceDto] = None  
     inputType : InputType
