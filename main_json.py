@@ -10,7 +10,7 @@ import requests
 from uuid import uuid4
 from models import ChatRequest, DEFAULT_JOB_DESCRIPTIONS, DEFAULT_MATCHING_TALENT, ChatResponseJson, JobDescriptionResponse, ChatSessionLog, EventType, Chunk, ChatValidRequest, ChatValidResponse, InputType, JobDescriptionServiceDto, TalentsRecommendRs, JobDto
 from pydantic import BaseModel, Field
-from typing import List, Union, Optional, Any 
+from typing import List, Union, Optional, Any
 from enum import Enum
 import re
 
