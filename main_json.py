@@ -316,7 +316,7 @@ class JobDescriptionFiltersRq(BaseModel):
 class FilterResult(BaseModel):
     type: ChatFilterType
     summary: str
-    userQuery: str
+    userQuery: Optional[str] = None
     filterValue: Union[EducationFilterRs, LicenseFilterRs, SkillFilterRs, ExaminationFilterRs, CareerFilterRs]
 
 class JobDescriptionFiltersRs(BaseModel):
