@@ -302,11 +302,20 @@ class EducationLevelType(str, Enum):
     MASTER = "MASTER"
     DOCTOR = "DOCTOR"
 
+class SkillLevel(str, Enum):
+    BASIC = "BASIC"
+    BEGINNER = "BEGINNER"
+    MIDDLE = "MIDDLE"
+    ADVANCED = "ADVANCED"
+    PROFESSIONAL = "PROFESSIONAL"
 
 class EducationFilterDetailRs(BaseModel):
     majorCode: int
     educationLevel: EducationLevelType
 
+class SkillFilterDetailRs(BaseModel):
+    skillCode: int
+    skillLevel: SkillLevel
 
 class ExaminationFilterDetailRs(BaseModel):
     examinationCode: int
@@ -329,7 +338,7 @@ class LicenseFilterRs(BaseModel):
 
 
 class SkillFilterRs(BaseModel):
-    skillCodes: List[int]
+    skillList: List[SkillFilterDetailRs]
 
 
 class ExaminationFilterRs(BaseModel):
@@ -370,7 +379,11 @@ def get_next_filter(chatSn: int, jobDescription: JobDescriptionServiceDto,
                     businessNumber: str) -> JobDescriptionFiltersRs:
     # 필터 타입과 해당 필터 값을 생성하는 함수 정의
     filter_types = [
-        (ChatFilterType.SKILL, lambda: SkillFilterRs(skillCodes=[2, 4, 6])),
+        (ChatFilterType.SKILL, lambda: SkillFilterRs(skillList=[
+            SkillFilterDetailRs(skillCode=2, skillLevel=SkillLevel.BASIC),
+            SkillFilterDetailRs(skillCode=4, skillLevel=SkillLevel.BEGINNER),
+            SkillFilterDetailRs(skillCode=6, skillLevel=SkillLevel.MIDDLE),
+        ])),
         (ChatFilterType.EDUCATION, lambda: EducationFilterRs(educationList=[
             EducationFilterDetailRs(majorCode=1010101, educationLevel=EducationLevelType.BACHELOR),
             EducationFilterDetailRs(majorCode=1010201, educationLevel=EducationLevelType.BACHELOR),
@@ -496,7 +509,11 @@ async def process_filter_action(
             modified_filter = FilterUpdateResult(
                 type=ChatFilterType.SKILL,
                 summary=f"Python 개발자 포지션에 대한 수정된 필터입니다.",
-                filterValue=SkillFilterRs(skillCodes=[1, 3, 5])
+                filterValue=SkillFilterRs(skillList=[
+                    SkillFilterDetailRs(skillCode=2, skillLevel=SkillLevel.BASIC),
+                    SkillFilterDetailRs(skillCode=4, skillLevel=SkillLevel.BEGINNER),
+                    SkillFilterDetailRs(skillCode=6, skillLevel=SkillLevel.MIDDLE),
+                ])
             )
 
             filterSn = request.filters[0].filterSn
@@ -512,7 +529,11 @@ async def process_filter_action(
             new_filter = FilterUpdateResult(
                 type=ChatFilterType.SKILL,
                 summary=f"Python 개발자 포지션에 대한 새로운 필터입니다.",
-                filterValue=SkillFilterRs(skillCodes=[7, 8, 9])
+                filterValue=SkillFilterRs(skillList=[
+                    SkillFilterDetailRs(skillCode=2, skillLevel=SkillLevel.BASIC),
+                    SkillFilterDetailRs(skillCode=4, skillLevel=SkillLevel.BEGINNER),
+                    SkillFilterDetailRs(skillCode=6, skillLevel=SkillLevel.MIDDLE),
+                ])
             )
 
             return SolverApiResponse(success=True, data=FilterUpdateActionResponse(
