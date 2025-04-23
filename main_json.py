@@ -462,8 +462,6 @@ class FilterActionType(str, Enum):
 
 
 class ActionFilterResult(BaseModel):
-    chatSn: int
-    jobDescriptionSn: int
     filterSn: int
     type: ChatFilterType
     summary: str
@@ -471,6 +469,8 @@ class ActionFilterResult(BaseModel):
 
 
 class FilterActionRequest(BaseModel):
+    chatSn: int
+    jobDescriptionSn: int
     filters: List[ActionFilterResult]
     keyword: str
 
